@@ -8,6 +8,8 @@ A real-time facial expression detection program that uses your webcam to detect 
 - **Smile Recognition**: Analyzes facial expressions to determine if you're smiling
 - **Expression Classification**: Labels your expression as "happy" (😊) or "sad" (😔)
 - **Smooth Detection**: Uses a 15-frame sliding window to prevent flickering results
+- **Emotion Logging**: Automatically tracks your emotions over time and saves to CSV
+- **Happiness Score**: Displays real-time happiness percentage on screen
 - **User-Friendly Interface**: 
   - Mirror-mode display for natural viewing
   - Color-coded feedback (green for happy, yellow for sad, red for no face)
@@ -36,6 +38,11 @@ cd ComputerVision
 
 2. Install the required dependencies:
 ```bash
+pip install -r requirements.txt
+```
+
+   Or install manually:
+```bash
 pip install opencv-python
 ```
 
@@ -53,6 +60,14 @@ python app.py
 
 **Controls:**
 - Press **'q'** to quit the application
+
+**Output:**
+- The program creates an `emotion_log.csv` file that tracks:
+  - Timestamp of each recording
+  - Your expression (happy/sad)
+  - Happiness score as a percentage
+- Logs are recorded approximately once per second
+- Open the CSV file in Excel or Google Sheets to analyze your emotion trends over time
 
 ## How It Works
 
@@ -74,13 +89,18 @@ python app.py
 
 ```
 computer vision/
-├── app.py          # Main program file
-└── README.md       # This file
+├── app.py              # Main program file
+├── README.md           # This file
+├── requirements.txt    # Python dependencies
+├── .gitignore          # Git ignore rules
+└── emotion_log.csv     # Generated emotion log (after first run)
 ```
 
 ### Key Functions:
 - `put_text()`: Helper function to display text on video frames
-- `run_face()`: Main function handling face detection, smile recognition, and video display
+- `init_emotion_log()`: Creates the CSV log file with headers if it doesn't exist
+- `log_emotion()`: Records timestamp, expression, and happiness score to CSV
+- `run_face()`: Main function handling face detection, smile recognition, logging, and video display
 
 ## Customization
 
@@ -117,16 +137,34 @@ happy_votes = deque(maxlen=15)  # Adjust maxlen for more/less smoothing
 - Close other resource-intensive applications
 - Reduce video resolution (modify capture settings in code)
 
+## Data Analysis
+
+After running the program, you can analyze your emotion data:
+
+1. **Open in Excel/Google Sheets**: The `emotion_log.csv` file can be opened in any spreadsheet application
+2. **Create charts**: Visualize your happiness trends over time
+3. **Calculate statistics**: Find your average happiness score, most common expression, etc.
+4. **Track patterns**: Notice if certain times of day correlate with different moods
+
+Example data format:
+```csv
+Timestamp,Expression,Happiness Score (%)
+2025-11-11 14:30:15,happy,87.5
+2025-11-11 14:30:16,happy,93.2
+2025-11-11 14:30:17,sad,32.1
+```
+
 ## Future Enhancements
 
 Possible improvements for this project:
 - [ ] Add more emotion categories (surprise, anger, neutral)
-- [ ] Track happiness percentage over time
+- [x] Track happiness percentage over time ✅
 - [ ] Multi-face detection and tracking
 - [ ] Save screenshots when happy
 - [ ] Add FPS counter
 - [ ] Create GUI with adjustable settings
 - [ ] Integrate modern ML models (MediaPipe, dlib)
+- [ ] Generate automatic emotion reports and visualizations
 
 ## License
 

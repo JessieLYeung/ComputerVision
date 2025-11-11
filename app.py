@@ -2,10 +2,19 @@
 # We use OpenCV because it provides built-in tools for real-time image analysis and camera handling
 import cv2
 
-# Import deque from Python’s standard library
+# Import deque from Python's standard library
 # We use deque to keep a short, fixed-length history of results (like recent smile detections)
 # This allows us to smooth out noisy frame-by-frame predictions
 from collections import deque
+
+# Import CSV module for logging emotion data to a file
+import csv
+
+# Import datetime for timestamping emotion logs
+from datetime import datetime
+
+# Import os for checking if log file exists
+import os
 
 
 # Define a helper function to draw text on an image frame
@@ -23,11 +32,42 @@ def put_text(img, text, org=(30, 40), scale=1.0, color=(0, 255, 0), thick=2):
     cv2.putText(img, text, org, cv2.FONT_HERSHEY_SIMPLEX, scale, color, thick, cv2.LINE_AA)
 
 
+# Function to initialize emotion log CSV file
+def init_emotion_log(log_file="emotion_log.csv"):
+    # Check if the log file already exists
+    # If it doesn't exist, create it with headers
+    if not os.path.exists(log_file):
+        with open(log_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['Timestamp', 'Expression', 'Happiness Score (%)'])
+        print(f"Created new emotion log file: {log_file}")
+    else:
+        print(f"Using existing emotion log file: {log_file}")
+
+
+# Function to log emotion data to CSV file
+def log_emotion(log_file, expression, score):
+    # Get current timestamp
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    # Convert score to percentage
+    score_percent = round(score * 100, 2)
+    
+    # Append data to CSV file
+    with open(log_file, 'a', newline='') as f:
+        writer = csv.writer(f)
+        writer.writerow([timestamp, expression, score_percent])
+
+
 # Main function that handles face and smile detection
 def run_face():
-    # Load OpenCV’s built-in Haar Cascade XML files for detecting faces and smiles
+    # Initialize emotion log file
+    log_file = "emotion_log.csv"
+    init_emotion_log(log_file)
+    
+    # Load OpenCV's built-in Haar Cascade XML files for detecting faces and smiles
     # Haar cascades are pre-trained models that detect specific visual patterns like faces or smiles
-    # Using them saves time because we don’t need to train our own models
+    # Using them saves time because we don't need to train our own models
     face_xml = cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
     smile_xml = cv2.data.haarcascades + "haarcascade_smile.xml"
 
@@ -47,8 +87,12 @@ def run_face():
         return
 
     # Create a deque to store recent smile detections
-    # A fixed window of 15 frames helps smooth the results, so one missed detection doesn’t cause flickering
+    # A fixed window of 15 frames helps smooth the results, so one missed detection doesn't cause flickering
     happy_votes = deque(maxlen=15)
+    
+    # Counter for logging interval (log every N frames to avoid too many entries)
+    frame_count = 0
+    log_interval = 30  # Log every 30 frames (approximately once per second at 30fps)
 
     # Start the main loop for real-time frame processing
     while True:
@@ -133,8 +177,19 @@ def run_face():
             # Only process the first face to keep the program simple and consistent
             break
 
+        # Log emotion data periodically (not every frame to keep file size manageable)
+        frame_count += 1
+        if frame_count >= log_interval and label != "no face":
+            log_emotion(log_file, label, score)
+            frame_count = 0  # Reset counter
+
         # Display the detected expression on the video feed
         put_text(frame, f"Expression: {label}", (30, 40), 1.0, color, 2)
+        
+        # Show happiness score percentage if a face is detected
+        if label != "no face":
+            score_text = f"Happiness: {int(score * 100)}%"
+            put_text(frame, score_text, (30, 80), 0.7, (255, 255, 255), 2)
 
         # Show an instruction line near the bottom of the frame
         # We calculate y position dynamically so it always stays near the bottom regardless of resolution
@@ -155,6 +210,10 @@ def run_face():
 
     # Close all OpenCV display windows cleanly
     cv2.destroyAllWindows()
+    
+    # Notify user where the emotion log is saved
+    print(f"\nEmotion data has been logged to: {log_file}")
+    print("You can open this file in Excel or any spreadsheet application to view your emotion history.")
 
 
 # Only run the detection if this file is executed directly (not imported)
